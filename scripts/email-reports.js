@@ -341,42 +341,39 @@ class EmailReportSystem {
   }
 
   async sendEmail(to, htmlContent) {
-    // This is a mock implementation
-    // In a real app, you would integrate with an email service like EmailJS, SendGrid, etc.
+  const apiKey = process.env.RESEND_API_KEY // 🔒 Store securely in env for real apps
 
-    console.log("Sending email report to:", to)
-    console.log("Email content generated:", htmlContent.length, "characters")
-
-    // Mock email sending
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log("Email sent successfully (mock)")
-        resolve(true)
-      }, 1000)
-    })
-
-    // Real implementation would look like:
-    /*
-    const response = await fetch(this.emailService, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        service_id: 'your_service_id',
-        template_id: 'your_template_id',
-        user_id: 'your_user_id',
-        template_params: {
-          to_email: to,
-          html_content: htmlContent,
-          subject: `FitTracker Pro - Daily Report for ${new Date().toLocaleDateString()}`
-        }
-      })
-    })
-    
-    return response.ok
-    */
+  const payload = {
+    from: "FitTracker Pro <noreply@yourdomain.com>", // Must be verified domain in Resend
+    to: [to],
+    subject: `FitTracker Pro - Daily Report for ${new Date().toLocaleDateString()}`,
+    html: htmlContent
   }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error("Resend API Error:", errorData)
+      throw new Error("Failed to send email via Resend")
+    }
+
+    console.log("Email sent successfully via Resend")
+    return true
+  } catch (err) {
+    console.error("Failed to send email:", err)
+    return false
+  }
+}
+
 
   // Method to send weekly summary
   async generateWeeklySummary() {
